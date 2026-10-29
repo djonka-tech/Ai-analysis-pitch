@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ИИ-анализ питча — оценка речи, тембра и уверенности</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">ИИ</div>
+    <div>
+      <div class="brand-title">Анализ питча</div>
+      <div class="brand-sub">речь · тембр · уверенность · текст · вопросы Demo Day</div>
+    </div>
+  </div>
+  <nav class="steps" id="steps">
+    <button class="step active" data-step="1"><b>1</b> Проект</button>
+    <button class="step" data-step="2"><b>2</b> Запись</button>
+    <button class="step" data-step="3"><b>3</b> Анализ</button>
+    <button class="step" data-step="4"><b>4</b> Отчёт</button>
+  </nav>
+  <div class="top-actions">
+    <span class="pill" title="Аудио и текст обрабатываются в браузере и не покидают компьютер">локально в браузере</span>
+    <button class="btn ghost small" id="btnHelp">Как это работает</button>
+  </div>
+</header>
+
+<main>
+  <!-- ================= ЭТАП 1 ================= -->
+  <section class="screen" data-screen="1">
+    <div class="hero">
+      <h1>Разберите своё выступление как на Demo Day</h1>
+      <p>Введите тему проекта, запишите питч — и получите разбор речи (темп, паузы, тембр, уверенность, слова-паразиты), разбор текста (позитивные слова, структура, цифры) и список вопросов жюри с каркасами ответов.</p>
+    </div>
+
+    <div class="card">
+      <h2>Шаг 1. О проекте</h2>
+      <div class="grid two">
+        <label class="field">
+          <span>Тема проекта <em>*</em></span>
+          <input id="topic" type="text" placeholder="Например: ИИ-платформа приёмки товара на складе" autocomplete="off">
+          <small>Обязательно: по теме строятся дополнительные вопросы жюри.</small>
+        </label>
+        <label class="field">
+          <span>Отрасль / ниша</span>
+          <input id="industry" type="text" placeholder="Логистика, финтех, EdTech, HR-tech…" list="industries" autocomplete="off">
+          <datalist id="industries">
+            <option>Логистика и склад</option><option>Финтех</option><option>EdTech</option><option>HR-tech</option>
+            <option>Медицина</option><option>Промышленность</option><option>Ритейл и e-com</option><option>Госсектор</option>
+            <option>Кибербезопасность</option><option>Медиа и контент</option><option>Энергетика</option><option>Строительство</option>
+          </datalist>
+        </label>
+        <label class="field">
+          <span>Формат выступления</span>
+          <select id="format">
+            <option>Demo Day</option>
+            <option>Демо-день корпорации</option>
+            <option>Питч инвесторам</option>
+            <option>Хакатон</option>
+            <option>Защита проекта</option>
+            <option>Собеседование / самопрезентация</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Аудитория</span>
+          <input id="audience" type="text" value="инвесторы и эксперты" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Регламент</span>
+          <select id="regulation">
+            <option value="60">1 минута</option>
+            <option value="120">2 минуты</option>
+            <option value="180" selected>3 минуты</option>
+            <option value="300">5 минут</option>
+            <option value="420">7 минут</option>
+            <option value="0">без регламента</option>
+          </select>
+        </label>
+        <div class="field">
+          <span>Что будет на выходе</span>
+          <div class="muted small" style="line-height:1.5">Оценки по 9 осям, таймлайн речи, разбор тембра и уверенности, подсветка слов, структура питча, переписанные фразы и 20–30 вопросов жюри с каркасами ответов.</div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnToRec">Далее: записать выступление →</button>
+        <button class="btn ghost" id="btnTryDemo">Посмотреть пример отчёта</button>
+      </div>
+      <div class="hint">Данные не отправляются на сервер: вся обработка — в вашем браузере. Интернет нужен только для распознавания речи и (по желанию) для ИИ-тренера.</div>
+    </div>
+  </section>
+
+  <!-- ================= ЭТАП 2 ================= -->
+  <section class="screen hidden" data-screen="2">
+    <div class="card">
+      <h2>Шаг 2. Запись выступления</h2>
+      <div class="tabs" id="inputTabs">
+        <button class="tab active" data-tab="mic">🎙 Записать с микрофона</button>
+        <button class="tab" data-tab="file">📁 Загрузить запись</button>
+        <button class="tab" data-tab="text">⌨️ Только текст</button>
+      </div>
+
+      <!-- микрофон -->
+      <div class="panel" data-panel="mic">
+        <div class="rec-row">
+          <button class="btn primary big" id="btnRec">● Начать запись</button>
+          <div class="timer" id="recTimer">00:00</div>
+          <div class="rec-meta">
+            <div id="recStatus" class="muted">Микрофон не активен</div>
+            <div id="recLimit" class="muted small"></div>
+          </div>
+          <button class="btn danger hidden" id="btnStop">■ Стоп</button>
+        </div>
+        <canvas id="levelCanvas" height="90" class="level-canvas"></canvas>
+        <div class="live-grid">
+          <div class="live-metric"><b id="lmWords">0</b><span>слов</span></div>
+          <div class="live-metric"><b id="lmWpm">—</b><span>слов/мин</span></div>
+          <div class="live-metric"><b id="lmPauses">0</b><span>пауз &gt; 0,5 с</span></div>
+          <div class="live-metric"><b id="lmFillers">0</b><span>слов-паразитов</span></div>
+          <div class="live-metric"><b id="lmVolume">—</b><span>громкость</span></div>
+        </div>
+        <div id="liveTips" class="tips"></div>
+        <div class="sub-block">
+          <div class="sub-head">
+            <span>Распознавание речи в реальном времени</span>
+            <span id="asrStatus" class="badge">проверка…</span>
+          </div>
+          <div id="liveTranscript" class="transcript-live muted">Текст выступления появится здесь во время записи.</div>
+        </div>
+      </div>
+
+      <!-- файл -->
+      <div class="panel hidden" data-panel="file">
+        <div id="dropZone" class="dropzone">
+          <div class="dz-icon">📁</div>
+          <div><b>Перетащите файл</b> или нажмите, чтобы выбрать</div>
+          <div class="muted small">Аудио или видео: mp3, wav, m4a, ogg, webm, mp4, mov. До 10 минут анализа.</div>
+          <input type="file" id="fileInput" accept="audio/*,video/*" class="hidden">
+        </div>
+        <div id="fileInfo" class="file-info hidden"></div>
+        <div class="grid two">
+          <label class="field">
+            <span>Субтитры или расшифровка с таймкодами (необязательно)</span>
+            <input type="file" id="subsInput" accept=".srt,.vtt,.txt">
+            <small>Файл .srt/.vtt даст точный транскрипт и привязку блоков ко времени.</small>
+          </label>
+          <div class="field">
+            <span>Распознать речь из файла (опция)</span>
+            <button class="btn ghost" id="btnWhisper">Распознать через ИИ (нужен ключ)</button>
+            <small>Использует OpenAI-совместимый сервис из панели «ИИ-тренер» внизу отчёта.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- текст -->
+      <div class="panel hidden" data-panel="text">
+        <div class="row">
+          <button class="btn ghost" id="btnSample">Загрузить пример питча</button>
+          <button class="btn ghost" id="btnClear">Очистить</button>
+          <span class="muted small">Без записи анализируются только текст, структура и вопросы.</span>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Транскрипт выступления <em id="trSource" class="muted"></em></span>
+        <textarea id="transcript" rows="9" placeholder="Здесь появится расшифровка. Можно править вручную, вставить текст или загрузить .srt/.vtt."></textarea>
+        <small id="trCount">0 слов</small>
+      </label>
+
+      <div class="row">
+        <button class="btn ghost" id="btnBack1">← Назад</button>
+        <button class="btn primary" id="btnAnalyze">Анализировать питч</button>
+        <span class="muted small" id="analyzeHint"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ЭТАП 3 ================= -->
+  <section class="screen hidden" data-screen="3">
+    <div class="card center">
+      <h2>Идёт анализ</h2>
+      <div class="progress"><i id="progressBar"></i></div>
+      <div id="progressLabel" class="muted">Подготовка…</div>
+      <div class="analyzing-note">
+        <p class="small muted">Считаем: основной тон (F0), вариативность интонации, паузы, темп и слоговые ядра, спектральный центроид и наклон тембра, HNR, джиттер и шиммер, громкость и динамику, словари позитивных и негативных слов, слова-паразиты, хеджи, штампы, структуру питча и вопросы жюри.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ЭТАП 4 ================= -->
+  <section class="screen hidden" data-screen="4">
+    <div class="report-actions">
+      <button class="btn ghost small" id="btnBack2">← Изменить запись</button>
+      <div class="spacer"></div>
+      <button class="btn ghost small" id="btnMd">Скачать Markdown</button>
+      <button class="btn ghost small" id="btnHtml">Скачать HTML-отчёт</button>
+      <button class="btn ghost small" id="btnJson">Скачать JSON</button>
+      <button class="btn ghost small" id="btnPrint">Печать / PDF</button>
+      <button class="btn primary small" id="btnNew">Новый разбор</button>
+    </div>
+    <div id="report"></div>
+
+    <!-- ИИ-тренер -->
+    <div class="card llm-card" id="llmCard">
+      <h2>ИИ-тренер (опция)</h2>
+      <p class="muted small">Базовый разбор считается полностью локально. Если подключить LLM (OpenAI-совместимый API или локальную Ollama), можно получить переписанный питч на 60/30 секунд, вопросы с готовыми ответами и диалог с тренером. Ключ хранится только в этом браузере (localStorage) и отправляется напрямую в выбранный сервис.</p>
+      <div class="grid four">
+        <label class="field"><span>Провайдер</span>
+          <select id="llmProvider">
+            <option value="openai">OpenAI</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="groq">Groq</option>
+            <option value="ollama">Ollama (локально)</option>
+            <option value="custom">Свой endpoint</option>
+          </select>
+        </label>
+        <label class="field"><span>Base URL</span><input id="llmBase" type="text" placeholder="https://api.openai.com/v1"></label>
+        <label class="field"><span>Модель</span><input id="llmModel" type="text" placeholder="gpt-4o-mini"></label>
+        <label class="field"><span>API-ключ</span><input id="llmKey" type="password" placeholder="sk-…"></label>
+      </div>
+      <div class="row">
+        <button class="btn ghost small" id="btnLLMSave">Сохранить настройки</button>
+        <button class="btn primary small" id="btnDeep">Углубить анализ ИИ</button>
+        <button class="btn ghost small" id="btnRewrite60">Переписать питч на 60 секунд</button>
+        <span id="llmStatus" class="muted small"></span>
+      </div>
+      <div id="deepOut" class="deep-out hidden"></div>
+      <div class="chat">
+        <div id="chatLog" class="chat-log"></div>
+        <div class="chat-row">
+          <input id="chatInput" type="text" placeholder="Спросите тренера: «что убрать из первых 30 секунд?»">
+          <button class="btn primary small" id="btnChat">Спросить</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- модалка «как это работает» -->
+<div class="modal hidden" id="helpModal">
+  <div class="modal-box">
+    <h3>Что именно измеряется</h3>
+    <ul class="help-list">
+      <li><b>Речь.</b> Основной тон (F0) через нормализованную автокорреляцию: средний уровень, диапазон, вариативность в полутонах, окончания фраз. Паузы по адаптивному порогу с гистерезисом. Темп — по слоговым ядрам амплитудной огибающей и по словам транскрипта.</li>
+      <li><b>Тембр.</b> Спектральный центроид и наклон спектра (яркость/глухость), доля высоких частот, HNR (гармоничность, «чистота» голоса), джиттер (нестабильность высоты) и шиммер (неровность громкости).</li>
+      <li><b>Уверенность.</b> Композитный индекс: живая, но не «скачущая» интонация, отсутствие хеджей и заполнителей, темп в рабочем диапазоне, минимум длинных пауз и восходящих окончаний, стабильность голоса.</li>
+      <li><b>Текст.</b> Словари позитивных и негативных слов (отдельно учитывается негатив о проблеме клиента — это нормально), слова-паразиты, слова-сомнения, усилители уверенности, штампы и канцелярит, плотность цифр и метрик, читаемость, длина предложений.</li>
+      <li><b>Структура.</b> 11 блоков питча, из них 8 обязательных: проблема, решение, рынок, бизнес-модель, traction, конкуренты, команда, ask.</li>
+      <li><b>Вопросы.</b> Банк вопросов Demo Day + вопросы по пробелам в вашем питче + вопросы по подаче (то, что видно из акустики) + вопросы по теме проекта. Для каждого — почему спросят, каркас ответа и чего избегать.</li>
+    </ul>
+    <p class="muted small">Это инструмент тренировки. Оценки носят справочный характер и не заменяют разбор эксперта: смысл питча важнее метрик подачи.</p>
+    <button class="btn primary small" id="btnHelpClose">Понятно</button>
+  </div>
+</div>
+
+<footer class="foot">
+  PitchEngine · локальный анализ речи и текста · <span id="ver"></span>
+</footer>
+
+<script src="lexicon.js"></script>
+<script src="engine.js"></script>
+<script src="llm.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
